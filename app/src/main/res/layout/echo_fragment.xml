@@ -6,26 +6,6 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/echo_start_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="Beep"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/beep_record_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:text="Beep and record"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/echo_start_button" />
-
-    <Button
         android:id="@+id/custom_beep_record_button"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -33,5 +13,15 @@
         android:text="Custom beep record"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/beep_record_button" />
+        tools:layout_editor_absoluteY="126dp" />
+
+    <Button
+        android:id="@+id/customChirpButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Custom chirp record"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/custom_beep_record_button" />
 </androidx.constraintlayout.widget.ConstraintLayout>

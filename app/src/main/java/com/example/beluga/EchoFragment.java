@@ -48,35 +48,6 @@ public class EchoFragment extends Fragment {
             Bundle savedInstanceState
     ) {
         binding = EchoFragmentBinding.inflate(inflater, container, false);
-        binding.echoStartButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-
-
-                    customBeep(400, 0.2);
-                    customBeep(500, 0.2);
-                    customBeep(600, 0.2);
-                    customBeep(800, 0.2);
-                    customBeep(1000, 0.2);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        binding.beepRecordButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    checkRecordingPermission();
-                    customBeepRecord(600, 0.2, 20, 1000, "record.pcm");
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-
         binding.customBeepRecordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,6 +81,45 @@ public class EchoFragment extends Fragment {
                 dialogBuilder.setView(dialogView);
                 AlertDialog dialog = dialogBuilder.create();
                 dialog.show();
+            }
+        });
+
+        binding.customChirpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireContext());
+                LayoutInflater inflater = requireActivity().getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.custom_chirp_record_layout, null);
+
+                EditText beepDurationEditText = dialogView.findViewById(R.id.beepDurationEditText);
+                EditText chirpFrequencyStartEditText = dialogView.findViewById(R.id.chirpFrequencyStartEditText);
+                EditText chirpFrequencyEndEditText = dialogView.findViewById(R.id.chirpFrequencyEndEditText);
+                EditText recordDurationEditText = dialogView.findViewById(R.id.recordDurationEditText);
+                EditText recordOffsetEditText = dialogView.findViewById(R.id.recordOffsetEditText);
+                EditText recordNameEditText = dialogView.findViewById(R.id.recordNameEditText);
+
+                Button doBeepButton = dialogView.findViewById(R.id.customBeepButton);
+                doBeepButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        try {
+                            customChirpRecord(
+                                    Integer.parseInt(chirpFrequencyStartEditText.getText().toString()),
+                                    Integer.parseInt(chirpFrequencyEndEditText.getText().toString()),
+                                    Integer.parseInt(beepDurationEditText.getText().toString()),
+                                    Integer.parseInt(recordOffsetEditText.getText().toString()),
+                                    Integer.parseInt(recordDurationEditText.getText().toString()),
+                                    recordNameEditText.getText().toString());
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+
+                dialogBuilder.setView(dialogView);
+                AlertDialog dialog = dialogBuilder.create();
+                dialog.show();
+
             }
         });
 
@@ -160,9 +170,50 @@ public class EchoFragment extends Fragment {
         track.play();
         Thread.sleep((long) duration);
         System.out.println("DONE PLAYING");
+    }
+
+    void customChirp(int frequenceyStart, int frequencyEnd, double duration) throws InterruptedException {
+        int sampleRate = 44100;
+        AudioTrack track = new AudioTrack.Builder()
+                .setAudioAttributes(
+                        new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build())
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .setAudioFormat(new AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                        .build())
+                .setBufferSizeInBytes(1000000)
+                .build();
+
+        double samples = sampleRate * (duration / 1000);
+        double[] sample = new double[(int) samples];
+
+        byte[] generatedSound = new byte[(int) (2*samples)];
+
+        int frequencies = frequencyEnd - frequenceyStart;
+        double samplesPerFrequency = samples / frequencies;
+        for (int i = 0; i < samples; i++) {
+
+            sample[i] = Math.sin(2 * Math.PI * i / Math.ceil(sampleRate / (frequenceyStart + Math.floorDiv(i, (int) Math.floor(samplesPerFrequency) + 1))));
+        }
+        int idx = 0;
+        for (final double dVal : sample) {
+            final short val = (short) ((dVal * 32767));
+            generatedSound[idx] = (byte) (val & 0x00ff);
+            idx++;
+            generatedSound[idx] = (byte) ((val & 0xff00) >>> 8);
+            idx++;
+        }
 
 
-
+        track.write(generatedSound, 0, generatedSound.length);
+        track.play();
+        Thread.sleep((long) duration);
+        System.out.println("DONE PLAYING");
 
     }
 
@@ -187,6 +238,31 @@ public class EchoFragment extends Fragment {
         }
 
         customBeep(frequency, beepDuration);
+        customRecord(recordingDuration, recordingOffset, writeThread);
+
+    }
+
+    void customChirpRecord(int frequencyStart, int frequencyEnd, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
+        Thread writeThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                writeAudioToFile(recordName);
+            }
+        });
+
+        try {
+            record = new AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    44100,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    10 * AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+            );
+        } catch (SecurityException e) {
+            System.out.println("permission not granted");
+        }
+
+        customChirp(frequencyStart, frequencyEnd, beepDuration);
         customRecord(recordingDuration, recordingOffset, writeThread);
 
     }
