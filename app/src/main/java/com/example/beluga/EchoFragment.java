@@ -28,7 +28,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class EchoFragment extends Fragment {
-    private boolean beeping = false;
     private AudioRecord record;
 
     @Override
@@ -202,7 +201,13 @@ public class EchoFragment extends Fragment {
     }
 
     void customBeepRecord(int frequency, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
-        Thread writeThread = new Thread(() -> writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100)));
+        Thread writeThread = new Thread(() -> {
+            try {
+                writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100), (int) recordingDuration, recordingOffset);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         try {
             record = new AudioRecord(
@@ -222,7 +227,13 @@ public class EchoFragment extends Fragment {
     }
 
     void customChirpRecord(int frequencyStart, int frequencyEnd, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
-        Thread writeThread = new Thread(() -> writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100)));
+        Thread writeThread = new Thread(() -> {
+            try {
+                writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100), (int) recordingDuration, recordingOffset);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         try {
             record = new AudioRecord(
@@ -264,12 +275,10 @@ public class EchoFragment extends Fragment {
         long recordStartTime = System.nanoTime();
 
         writeThread.start();
-        Thread.sleep(duration);
-        beeping = false;
-        System.out.println(" ================================= beeping = false ==========================================");
-        System.out.println("Recording time: " + ((System.nanoTime() - recordStartTime) / 1000000));
+//        Thread.sleep(duration);
+//        beeping = false;
 
-        record.stop();
+//        record.stop();
         System.out.println("DONE RECORDING");
     }
 
@@ -285,7 +294,7 @@ public class EchoFragment extends Fragment {
 
     }
 
-    void writeAudioToFile(String recordName, long samples) {
+    void writeAudioToFile(String recordName, long samples, int recordingTime, long recordingOffset) throws InterruptedException {
 
 
         FileOutputStream os = null;
@@ -297,11 +306,14 @@ public class EchoFragment extends Fragment {
             e.printStackTrace();
         }
         short[] shortData = new short[(int) samples];
+        Thread.sleep(recordingOffset);
 
         long writeStartTime = System.nanoTime();
+        long recordingStartTime = System.currentTimeMillis();
         record.startRecording();
-        beeping = true;
-        while (beeping) {
+        boolean beeping = true;
+
+        while (beeping && System.currentTimeMillis() < recordingStartTime + recordingTime) {
             record.read(shortData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) / 2);
             try {
                 byte[] bData = short2byte(shortData);
@@ -312,6 +324,9 @@ public class EchoFragment extends Fragment {
                 e.printStackTrace();
             }
         }
+        beeping = false;
+        record.stop();
+
         try {
             os.close();
             System.out.println("Done writing: " + ((System.nanoTime() - writeStartTime) / 1000000));
