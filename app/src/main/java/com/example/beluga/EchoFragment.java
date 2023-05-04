@@ -299,7 +299,7 @@ public class EchoFragment extends Fragment {
         long readCounter = 0;
         System.out.println("Expecting samples: " + samples);
         int shortsRead = 1;
-        while (readCounter < samples * 2) {
+        while (readCounter < samples) {
             shortsRead = record.read(shortData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) / 2);
             System.out.println("readcounter: " + readCounter);
             System.out.println("Read shorts: " + shortsRead);
