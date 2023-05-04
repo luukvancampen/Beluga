@@ -1,5 +1,4 @@
 package com.example.beluga;
-
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
@@ -19,9 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-
 import com.example.beluga.databinding.EchoFragmentBinding;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -106,11 +103,11 @@ public class EchoFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
     }
 
-    void gatherTrainingDataChirp(String label, double frequencyStart, double frequencyEnd, long chirpDuration, long timeBetweenChirps) {
+//    void gatherTrainingDataChirp(String label, double frequencyStart, double frequencyEnd, long chirpDuration, long timeBetweenChirps) {
+//
+//    }
 
-    }
-
-    void customBeep(double frequency, double duration) throws InterruptedException {
+    void customBeep(double frequency, double duration) {
         int sampleRate = 44100;
 
         AudioTrack track = new AudioTrack.Builder()
@@ -128,7 +125,6 @@ public class EchoFragment extends Fragment {
                 .setBufferSizeInBytes(10 * AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT))
                 .build();
         double samples = sampleRate * (duration / 1000);
-        System.out.println("Samples: " + samples);
         double[] sample = new double[(int) samples];
 
         byte[] generatedSound = new byte[(int) (2*samples)];
@@ -142,16 +138,15 @@ public class EchoFragment extends Fragment {
             // scale to maximum amplitude
             final short val = (short) ((dVal * 32767));
             // in 16 bit wav PCM, first byte is the low order byte
-            generatedSound[idx++] = (byte) (val & 0x00ff);
-            generatedSound[idx++] = (byte) ((val & 0xff00) >>> 8);
+            generatedSound[idx] = (byte) (val & 0x00ff);
+            idx++;
+            generatedSound[idx] = (byte) ((val & 0xff00) >>> 8);
+            idx++;
 
         }
-        System.out.println("Generated sound lenght: " + generatedSound.length);
 
         track.write(generatedSound, 0, generatedSound.length);
         track.play();
-//        Thread.sleep((long) duration);
-        System.out.println("DONE PLAYING");
     }
 
     void customChirp(int frequenceyStart, int frequencyEnd, double duration) throws InterruptedException {
@@ -172,7 +167,6 @@ public class EchoFragment extends Fragment {
                 .build();
 
         double samples = Math.ceil(sampleRate * (duration / 1000));
-        System.out.println("Samples: " + samples);
         double[] sample = new double[(int) samples];
 
         byte[] generatedSound = new byte[(int) (2*samples)];
@@ -196,7 +190,6 @@ public class EchoFragment extends Fragment {
         track.write(generatedSound, 0, generatedSound.length);
         track.play();
         Thread.sleep((long) duration);
-        System.out.println("DONE PLAYING");
 
     }
 
@@ -222,8 +215,7 @@ public class EchoFragment extends Fragment {
         }
 
         customBeep(frequency, beepDuration);
-        customRecord(recordingDuration, recordingOffset, writeThread);
-
+        customRecord(writeThread);
     }
 
     void customChirpRecord(int frequencyStart, int frequencyEnd, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
@@ -248,7 +240,7 @@ public class EchoFragment extends Fragment {
         }
 
         customChirp(frequencyStart, frequencyEnd, beepDuration);
-        customRecord(recordingDuration, recordingOffset, writeThread);
+        customRecord(writeThread);
 
     }
 
@@ -270,16 +262,8 @@ public class EchoFragment extends Fragment {
     }
 
 
-    void customRecord(long duration, long offset, Thread writeThread) throws InterruptedException {
-        Thread.sleep(offset);
-        long recordStartTime = System.nanoTime();
-
+    void customRecord(Thread writeThread) {
         writeThread.start();
-//        Thread.sleep(duration);
-//        beeping = false;
-
-//        record.stop();
-        System.out.println("DONE RECORDING");
     }
 
     private byte[] short2byte(short[] sData) {
@@ -299,7 +283,6 @@ public class EchoFragment extends Fragment {
 
         FileOutputStream os = null;
         try {
-            System.out.println(Environment.getExternalStorageDirectory().getAbsolutePath());
             os = new FileOutputStream(new File(Environment.getExternalStorageDirectory().getAbsolutePath(), recordName), false);
 
         } catch (FileNotFoundException e) {
@@ -308,28 +291,34 @@ public class EchoFragment extends Fragment {
         short[] shortData = new short[(int) samples];
         Thread.sleep(recordingOffset);
 
-        long writeStartTime = System.nanoTime();
-        long recordingStartTime = System.currentTimeMillis();
         record.startRecording();
-        boolean beeping = true;
+        long recordingStartTime = System.currentTimeMillis();
+        System.out.println("RECORDING START TIME: " + recordingStartTime);
+        System.out.println("RECORDING SHOULD END AT: " + (recordingStartTime + recordingTime));
 
-        while (beeping && System.currentTimeMillis() < recordingStartTime + recordingTime) {
-            record.read(shortData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) / 2);
+        long readCounter = 0;
+        System.out.println("Expecting samples: " + samples);
+        int shortsRead = 1;
+        while (readCounter < samples * 2) {
+            shortsRead = record.read(shortData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) / 2);
+            System.out.println("readcounter: " + readCounter);
+            System.out.println("Read shorts: " + shortsRead);
+            readCounter += shortsRead;
             try {
                 byte[] bData = short2byte(shortData);
                 assert os != null;
                 os.write(bData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT));
-                System.out.println("Still trying to write stuff");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        beeping = false;
+        System.out.println("RECORDING END TIME: " + System.currentTimeMillis());
         record.stop();
 
+
         try {
+            assert os != null;
             os.close();
-            System.out.println("Done writing: " + ((System.nanoTime() - writeStartTime) / 1000000));
         } catch (IOException e) {
             e.printStackTrace();
         }
