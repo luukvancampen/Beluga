@@ -151,7 +151,7 @@ public class EchoFragment extends Fragment {
 
         track.write(generatedSound, 0, generatedSound.length);
         track.play();
-        Thread.sleep((long) duration);
+//        Thread.sleep((long) duration);
         System.out.println("DONE PLAYING");
     }
 
