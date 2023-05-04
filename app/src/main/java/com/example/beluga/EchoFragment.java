@@ -2,43 +2,32 @@ package com.example.beluga;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.health.SystemHealthManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
-import androidx.activity.result.contract.ActivityResultContract;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.beluga.databinding.EchoFragmentBinding;
-import com.example.beluga.databinding.FragmentFirstBinding;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.Arrays;
-import java.util.Objects;
 
 public class EchoFragment extends Fragment {
-    private EchoFragmentBinding binding;
     private boolean beeping = false;
     private AudioRecord record;
 
@@ -47,80 +36,68 @@ public class EchoFragment extends Fragment {
             @NonNull LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState
     ) {
-        binding = EchoFragmentBinding.inflate(inflater, container, false);
-        binding.customBeepRecordButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireContext());
-                LayoutInflater inflater = requireActivity().getLayoutInflater();
-                View dialogView = inflater.inflate(R.layout.custom_beep_record_layout, null);
+        com.example.beluga.databinding.EchoFragmentBinding binding = EchoFragmentBinding.inflate(inflater, container, false);
+        binding.customBeepRecordButton.setOnClickListener(view -> {
+            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireContext());
+            LayoutInflater inflater1 = requireActivity().getLayoutInflater();
+            View dialogView = inflater1.inflate(R.layout.custom_beep_record_layout, null);
 
-                EditText beepDurationEditText = dialogView.findViewById(R.id.beepDurationEditText);
-                EditText beepFrequencyEditText = dialogView.findViewById(R.id.beepFrequencyEditText);
-                EditText recordDurationEditText = dialogView.findViewById(R.id.recordDurationEditText);
-                EditText recordOffsetEditText = dialogView.findViewById(R.id.recordOffsetEditText);
-                EditText recordNameEditText = dialogView.findViewById(R.id.recordNameEditText);
+            EditText beepDurationEditText = dialogView.findViewById(R.id.beepDurationEditText);
+            EditText beepFrequencyEditText = dialogView.findViewById(R.id.beepFrequencyEditText);
+            EditText recordDurationEditText = dialogView.findViewById(R.id.recordDurationEditText);
+            EditText recordOffsetEditText = dialogView.findViewById(R.id.recordOffsetEditText);
+            EditText recordNameEditText = dialogView.findViewById(R.id.recordNameEditText);
 
-                Button doBeepButton = dialogView.findViewById(R.id.customBeepButton);
-                doBeepButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        try {
-                            customBeepRecord(
-                                    Integer.parseInt(beepFrequencyEditText.getText().toString()),
-                                    Integer.parseInt(beepDurationEditText.getText().toString()),
-                                    Integer.parseInt(recordOffsetEditText.getText().toString()),
-                                    Integer.parseInt(recordDurationEditText.getText().toString()),
-                                    recordNameEditText.getText().toString());
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
+            Button doBeepButton = dialogView.findViewById(R.id.customBeepButton);
+            doBeepButton.setOnClickListener(view1 -> {
+                try {
+                    customBeepRecord(
+                            Integer.parseInt(beepFrequencyEditText.getText().toString()),
+                            Integer.parseInt(beepDurationEditText.getText().toString()),
+                            Integer.parseInt(recordOffsetEditText.getText().toString()),
+                            Integer.parseInt(recordDurationEditText.getText().toString()),
+                            recordNameEditText.getText().toString());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-                dialogBuilder.setView(dialogView);
-                AlertDialog dialog = dialogBuilder.create();
-                dialog.show();
-            }
+            dialogBuilder.setView(dialogView);
+            AlertDialog dialog = dialogBuilder.create();
+            dialog.show();
         });
 
-        binding.customChirpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireContext());
-                LayoutInflater inflater = requireActivity().getLayoutInflater();
-                View dialogView = inflater.inflate(R.layout.custom_chirp_record_layout, null);
+        binding.customChirpButton.setOnClickListener(view -> {
+            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireContext());
+            LayoutInflater inflater12 = requireActivity().getLayoutInflater();
+            View dialogView = inflater12.inflate(R.layout.custom_chirp_record_layout, null);
 
-                EditText beepDurationEditText = dialogView.findViewById(R.id.beepDurationEditText);
-                EditText chirpFrequencyStartEditText = dialogView.findViewById(R.id.chirpFrequencyStartEditText);
-                EditText chirpFrequencyEndEditText = dialogView.findViewById(R.id.chirpFrequencyEndEditText);
-                EditText recordDurationEditText = dialogView.findViewById(R.id.recordDurationEditText);
-                EditText recordOffsetEditText = dialogView.findViewById(R.id.recordOffsetEditText);
-                EditText recordNameEditText = dialogView.findViewById(R.id.recordNameEditText);
+            EditText beepDurationEditText = dialogView.findViewById(R.id.beepDurationEditText);
+            EditText chirpFrequencyStartEditText = dialogView.findViewById(R.id.chirpFrequencyStartEditText);
+            EditText chirpFrequencyEndEditText = dialogView.findViewById(R.id.chirpFrequencyEndEditText);
+            EditText recordDurationEditText = dialogView.findViewById(R.id.recordDurationEditText);
+            EditText recordOffsetEditText = dialogView.findViewById(R.id.recordOffsetEditText);
+            EditText recordNameEditText = dialogView.findViewById(R.id.recordNameEditText);
 
-                Button doBeepButton = dialogView.findViewById(R.id.customBeepButton);
-                doBeepButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        try {
-                            customChirpRecord(
-                                    Integer.parseInt(chirpFrequencyStartEditText.getText().toString()),
-                                    Integer.parseInt(chirpFrequencyEndEditText.getText().toString()),
-                                    Integer.parseInt(beepDurationEditText.getText().toString()),
-                                    Integer.parseInt(recordOffsetEditText.getText().toString()),
-                                    Integer.parseInt(recordDurationEditText.getText().toString()),
-                                    recordNameEditText.getText().toString());
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
+            Button doBeepButton = dialogView.findViewById(R.id.customBeepButton);
+            doBeepButton.setOnClickListener(view12 -> {
+                try {
+                    customChirpRecord(
+                            Integer.parseInt(chirpFrequencyStartEditText.getText().toString()),
+                            Integer.parseInt(chirpFrequencyEndEditText.getText().toString()),
+                            Integer.parseInt(beepDurationEditText.getText().toString()),
+                            Integer.parseInt(recordOffsetEditText.getText().toString()),
+                            Integer.parseInt(recordDurationEditText.getText().toString()),
+                            recordNameEditText.getText().toString());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
-                dialogBuilder.setView(dialogView);
-                AlertDialog dialog = dialogBuilder.create();
-                dialog.show();
+            dialogBuilder.setView(dialogView);
+            AlertDialog dialog = dialogBuilder.create();
+            dialog.show();
 
-            }
         });
 
         return binding.getRoot();
@@ -128,6 +105,10 @@ public class EchoFragment extends Fragment {
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+    }
+
+    void gatherTrainingDataChirp(String label, double frequencyStart, double frequencyEnd, long chirpDuration, long timeBetweenChirps) {
+
     }
 
     void customBeep(double frequency, double duration) throws InterruptedException {
@@ -145,7 +126,7 @@ public class EchoFragment extends Fragment {
                         .setSampleRate(sampleRate)
                         .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
                         .build())
-                .setBufferSizeInBytes(1000000)
+                .setBufferSizeInBytes(AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT))
                 .build();
         double samples = sampleRate * (duration / 1000);
         double[] sample = new double[(int) samples];
@@ -189,7 +170,8 @@ public class EchoFragment extends Fragment {
                 .setBufferSizeInBytes(1000000)
                 .build();
 
-        double samples = sampleRate * (duration / 1000);
+        double samples = Math.ceil(sampleRate * (duration / 1000));
+        System.out.println("Samples: " + samples);
         double[] sample = new double[(int) samples];
 
         byte[] generatedSound = new byte[(int) (2*samples)];
@@ -198,7 +180,7 @@ public class EchoFragment extends Fragment {
         double samplesPerFrequency = samples / frequencies;
         for (int i = 0; i < samples; i++) {
 
-            sample[i] = Math.sin(2 * Math.PI * i / Math.ceil(sampleRate / (frequenceyStart + Math.floorDiv(i, (int) Math.floor(samplesPerFrequency) + 1))));
+            sample[i] = Math.sin(2 * Math.PI * i / Math.ceil(44100.0 / (frequenceyStart + Math.floorDiv(i, (int) Math.floor(samplesPerFrequency) + 1))));
         }
         int idx = 0;
         for (final double dVal : sample) {
@@ -218,12 +200,7 @@ public class EchoFragment extends Fragment {
     }
 
     void customBeepRecord(int frequency, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
-        Thread writeThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                writeAudioToFile(recordName);
-            }
-        });
+        Thread writeThread = new Thread(() -> writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100)));
 
         try {
             record = new AudioRecord(
@@ -243,12 +220,7 @@ public class EchoFragment extends Fragment {
     }
 
     void customChirpRecord(int frequencyStart, int frequencyEnd, double beepDuration, long recordingOffset, long recordingDuration, String recordName) throws InterruptedException {
-        Thread writeThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                writeAudioToFile(recordName);
-            }
-        });
+        Thread writeThread = new Thread(() -> writeAudioToFile(recordName, (long) Math.ceil((recordingDuration / 1000.0) * 44100)));
 
         try {
             record = new AudioRecord(
@@ -292,6 +264,7 @@ public class EchoFragment extends Fragment {
         writeThread.start();
         Thread.sleep(duration);
         record.stop();
+        System.out.println("DONE RECORDING");
         beeping = false;
     }
 
@@ -307,37 +280,32 @@ public class EchoFragment extends Fragment {
 
     }
 
-    void writeAudioToFile(String recordName) {
+    void writeAudioToFile(String recordName, long samples) {
 
-        String path = "belugaRecording.pcm";
 
         FileOutputStream os = null;
         try {
             System.out.println(Environment.getExternalStorageDirectory().getAbsolutePath());
-//            os = requireContext().openFileOutput("recording.pcm", Context.MODE_PRIVATE);
             os = new FileOutputStream(new File(Environment.getExternalStorageDirectory().getAbsolutePath(), recordName));
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        short[] shortData = new short[2 * 800];
+        short[] shortData = new short[(int) samples];
 
         while (beeping) {
-            // gets the voice output from microphone to byte format
 
-            record.read(shortData, 0, 1600);
-//            System.out.println("Short wirting to file" + Arrays.toString(shortData));
+            record.read(shortData, 0, (2 * (int) samples));
             try {
-                // // writes the data to file from buffer
-                // // stores the voice buffer
-                byte bData[] = short2byte(shortData);
-                os.write(bData, 0, 1600 * 2);
-                System.out.println("WROTE STUFF");
+                byte[] bData = short2byte(shortData);
+                assert os != null;
+                os.write(bData, 0, (int) (2 * samples));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         try {
+            assert os != null;
             os.close();
         } catch (IOException e) {
             e.printStackTrace();
