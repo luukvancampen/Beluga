@@ -22,6 +22,7 @@
         android:ems="10"
         android:hint="Beep duration (ms)"
         android:inputType="number"
+        android:text="2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/durationTextView" />
@@ -53,7 +54,8 @@
             android:layout_weight="1"
             android:ems="10"
             android:hint="Start"
-            android:inputType="number" />
+            android:inputType="number"
+            android:text="10000" />
 
         <EditText
             android:id="@+id/chirpFrequencyEndEditText"
@@ -63,7 +65,8 @@
             android:layout_weight="1"
             android:ems="10"
             android:hint="End"
-            android:inputType="number" />
+            android:inputType="number"
+            android:text="12000" />
 
     </LinearLayout>
 
@@ -87,6 +90,7 @@
         android:ems="10"
         android:hint="Record duration (ms)"
         android:inputType="number"
+        android:text="100"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView4" />
@@ -108,6 +112,7 @@
         android:ems="10"
         android:hint="Record start offset (ms)"
         android:inputType="number"
+        android:text="13"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />

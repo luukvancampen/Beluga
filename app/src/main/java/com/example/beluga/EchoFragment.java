@@ -124,28 +124,30 @@ public class EchoFragment extends Fragment {
                 .setAudioFormat(new AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                         .setSampleRate(sampleRate)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                         .build())
-                .setBufferSizeInBytes(AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT))
+                .setBufferSizeInBytes(10 * AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT))
                 .build();
         double samples = sampleRate * (duration / 1000);
+        System.out.println("Samples: " + samples);
         double[] sample = new double[(int) samples];
 
         byte[] generatedSound = new byte[(int) (2*samples)];
 
-        for (int i = 0; i < samples; i++) {
-            sample[i] = Math.sin(2 * Math.PI * i / Math.ceil(sampleRate / frequency));
+        for (int i = 0; i < samples - 1; ++i) {
+            sample[i] = Math.sin(2 * Math.PI * i / (sampleRate / frequency));
         }
 
         int idx = 0;
         for (final double dVal : sample) {
+            // scale to maximum amplitude
             final short val = (short) ((dVal * 32767));
-            generatedSound[idx] = (byte) (val & 0x00ff);
-            idx++;
-            generatedSound[idx] = (byte) ((val & 0xff00) >>> 8);
-            idx++;
-        }
+            // in 16 bit wav PCM, first byte is the low order byte
+            generatedSound[idx++] = (byte) (val & 0x00ff);
+            generatedSound[idx++] = (byte) ((val & 0xff00) >>> 8);
 
+        }
+        System.out.println("Generated sound lenght: " + generatedSound.length);
 
         track.write(generatedSound, 0, generatedSound.length);
         track.play();
@@ -165,7 +167,7 @@ public class EchoFragment extends Fragment {
                 .setAudioFormat(new AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                         .setSampleRate(sampleRate)
-                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                         .build())
                 .setBufferSizeInBytes(1000000)
                 .build();
@@ -259,13 +261,16 @@ public class EchoFragment extends Fragment {
 
     void customRecord(long duration, long offset, Thread writeThread) throws InterruptedException {
         Thread.sleep(offset);
-        record.startRecording();
-        beeping = true;
+        long recordStartTime = System.nanoTime();
+
         writeThread.start();
         Thread.sleep(duration);
+        beeping = false;
+        System.out.println(" ================================= beeping = false ==========================================");
+        System.out.println("Recording time: " + ((System.nanoTime() - recordStartTime) / 1000000));
+
         record.stop();
         System.out.println("DONE RECORDING");
-        beeping = false;
     }
 
     private byte[] short2byte(short[] sData) {
@@ -286,27 +291,30 @@ public class EchoFragment extends Fragment {
         FileOutputStream os = null;
         try {
             System.out.println(Environment.getExternalStorageDirectory().getAbsolutePath());
-            os = new FileOutputStream(new File(Environment.getExternalStorageDirectory().getAbsolutePath(), recordName));
+            os = new FileOutputStream(new File(Environment.getExternalStorageDirectory().getAbsolutePath(), recordName), false);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         short[] shortData = new short[(int) samples];
 
+        long writeStartTime = System.nanoTime();
+        record.startRecording();
+        beeping = true;
         while (beeping) {
-
-            record.read(shortData, 0, (2 * (int) samples));
+            record.read(shortData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT) / 2);
             try {
                 byte[] bData = short2byte(shortData);
                 assert os != null;
-                os.write(bData, 0, (int) (2 * samples));
+                os.write(bData, 0, AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT));
+                System.out.println("Still trying to write stuff");
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         try {
-            assert os != null;
             os.close();
+            System.out.println("Done writing: " + ((System.nanoTime() - writeStartTime) / 1000000));
         } catch (IOException e) {
             e.printStackTrace();
         }
